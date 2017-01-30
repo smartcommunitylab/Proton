@@ -20,8 +20,10 @@ package com.ibm.hrl.proton.adapters.formatters;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -46,23 +48,37 @@ import com.ibm.hrl.proton.utilities.containers.Pair;
  * @author tali
  * 
  */
-public class JSONNgsiFormatter extends AbstractTextFormatter {
+public class CustomJSONNgsiFormatter extends AbstractTextFormatter {
+	
 	private static final String DEFAULT_DATE_FORMAT = "dd/MM/yyyy-HH:mm:ss";
 	static final String EVENT_NAME_SUFFIX = "ContextUpdate"; 
+	
 	static final String ENTITY_ID_ATTRIBUTE = "entityId";
 	static final String ENTITY_TYPE_ATTRIBUTE = "entityType";
-	private static final Logger logger = Logger.getLogger(JSONNgsiFormatter.class.getName());
-
-
 	
-	public JSONNgsiFormatter(Map<String,Object> properties,EventMetadataFacade eventMetadata,EepFacade eep) throws AdapterException
+	private static final String DETECTION_TIME = "DetectionTime";
+	private static final String EVENT_ID = "EventId";
+	private static final String OCCURRENCE_TIME = "OccurrenceTime";
+	private static final String NAME = "Name";
+	private static final String COST = "Cost";
+	private static final String DURATION = "Duration";
+	private static final String CERTAINTY = "Certainty";
+	
+	private static final Logger logger = Logger.getLogger(CustomJSONNgsiFormatter.class.getName());
+
+	private String[] toRemove = {ENTITY_ID_ATTRIBUTE,ENTITY_TYPE_ATTRIBUTE, CERTAINTY, DURATION, COST, NAME, OCCURRENCE_TIME, EVENT_ID, DETECTION_TIME};
+	private List<String> toRemoveList;
+	
+	public CustomJSONNgsiFormatter(Map<String,Object> properties,EventMetadataFacade eventMetadata,EepFacade eep) throws AdapterException
 	{
 		this((String)properties.get(MetadataParser.DATE_FORMAT),eventMetadata,eep);
+		toRemoveList = Arrays.asList(toRemove);
 	}
 	
-	private JSONNgsiFormatter(String dateFormat,EventMetadataFacade eventMetadata,EepFacade eep) throws AdapterException 
+	private CustomJSONNgsiFormatter(String dateFormat,EventMetadataFacade eventMetadata,EepFacade eep) throws AdapterException 
 	{
 		super(dateFormat,eventMetadata,eep);
+		toRemoveList = Arrays.asList(toRemove);
 	}
 	
 	
@@ -95,8 +111,11 @@ public class JSONNgsiFormatter extends AbstractTextFormatter {
 				
 				for (Map.Entry<String, Object> attributeEntry : instanceAttrs.entrySet()) {
 					String attrName = attributeEntry.getKey();
-					if (attributeEntry.getKey().equals(ENTITY_TYPE_ATTRIBUTE)) continue;
-					if (attributeEntry.getKey().equals(ENTITY_ID_ATTRIBUTE)) continue;
+//					if (attributeEntry.getKey().equals(ENTITY_TYPE_ATTRIBUTE)) continue;
+//					if (attributeEntry.getKey().equals(ENTITY_ID_ATTRIBUTE)) continue;
+					if (toRemoveList.contains(attributeEntry.getKey())) {
+						continue;
+					}
 
 					Object value = attributeEntry.getValue();
 					if(value != null)

@@ -18,6 +18,7 @@ package com.ibm.hrl.proton.adapters.rest.client;
 import com.ibm.hrl.proton.adapters.configuration.IOutputAdapterConfiguration;
 import com.ibm.hrl.proton.adapters.connector.IOutputConnector;
 import com.ibm.hrl.proton.adapters.formatters.CSVTextFormatter;
+import com.ibm.hrl.proton.adapters.formatters.CustomJSONNgsiFormatter;
 import com.ibm.hrl.proton.adapters.formatters.ITextFormatter;
 import com.ibm.hrl.proton.adapters.formatters.ITextFormatter.TextFormatterType;
 import com.ibm.hrl.proton.adapters.formatters.JSONFormatter;
@@ -65,6 +66,9 @@ public class RESTOutputAdapter extends AbstractOutputAdapter {
 		case JSON_NGSI:
 			textFormatter = new JSONNgsiFormatter(consumerMetadata.getConsumerProperties(),eventMetadata,eep);
 			break;
+		case JSON_NGSI_CUSTOM:
+			textFormatter = new CustomJSONNgsiFormatter(consumerMetadata.getConsumerProperties(),eventMetadata,eep);
+			break;			
 		case TAG:
 			textFormatter = new TagTextFormatter(consumerMetadata.getConsumerProperties(),eventMetadata,eep);
 			break;
@@ -77,15 +81,18 @@ public class RESTOutputAdapter extends AbstractOutputAdapter {
 	public void writeObject(IDataObject instance) throws AdapterException {
 		try {
 			//out.write(eventInstance.toString()+LINE_SEPARATOR);
-			if (textFormatter instanceof JSONNgsiFormatter)
-			{
+			if (textFormatter instanceof JSONNgsiFormatter) {
 				//format the instance and extract the url
 				Pair<String,String> formattedInstance = ((JSONNgsiFormatter)textFormatter).formatInstance(instance);
 				String urlExtension = formattedInstance.getFirstValue();
 				String eventInstance = formattedInstance.getSecondValue();
 				RestClient.patchEventToConsumer(url,urlExtension, eventInstance, contentType,authToken);
-			}else
-			{
+			} else if (textFormatter instanceof CustomJSONNgsiFormatter) {
+				Pair<String,String> formattedInstance = ((CustomJSONNgsiFormatter)textFormatter).formatInstance(instance);
+				String urlExtension = formattedInstance.getFirstValue();
+				String eventInstance = formattedInstance.getSecondValue();
+				RestClient.patchEventToConsumer(url,urlExtension, eventInstance, contentType,authToken);			
+			} else {
 				RestClient.putEventToConsumer(url, (String)textFormatter.formatInstance(instance), contentType,authToken);
 			}
 			
